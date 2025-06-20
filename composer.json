@@ -27,7 +27,8 @@
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^3.8",
-        "pestphp/pest-plugin-laravel": "^3.2"
+        "pestphp/pest-plugin-laravel": "^3.2",
+        "phpunit/php-code-coverage": "^11.0"
     },
     "autoload": {
         "psr-4": {
@@ -64,6 +65,18 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "test-coverage": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test --coverage"
+        ],
+        "test-coverage-html": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test --coverage-html coverage-html"
+        ],
+        "test-coverage-clover": [
+            "@php artisan config:clear --ansi", 
+            "@php artisan test --coverage-clover coverage.xml"
         ]
     },
     "extra": {

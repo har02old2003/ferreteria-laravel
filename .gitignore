@@ -31,3 +31,6 @@ yarn-error.log
 coverage.xml
 coverage-html/
 tests/results.xml
+
+# Coverage installation scripts
+install-pcov.bat
