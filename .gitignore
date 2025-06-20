@@ -34,3 +34,7 @@ tests/results.xml
 
 # Coverage installation scripts
 install-pcov.bat
+
+# Metrics reports
+*-report.json
+coverage-report.json
