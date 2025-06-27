@@ -71,6 +71,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Sales
         Route::resource('sales', SaleController::class);
         Route::get('sales/{sale}/ticket', [SaleController::class, 'ticket'])->name('sales.ticket');
+        
+        // Reports - Nueva funcionalidad de exportación
+        Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export/sales', [\App\Http\Controllers\Admin\ReportController::class, 'exportSales'])->name('reports.export.sales');
+        Route::get('/reports/export/low-stock', [\App\Http\Controllers\Admin\ReportController::class, 'exportLowStock'])->name('reports.export.low-stock');
+        Route::get('/reports/export/dashboard', [\App\Http\Controllers\Admin\ReportController::class, 'exportDashboardReport'])->name('reports.export.dashboard');
     });
 });
 
