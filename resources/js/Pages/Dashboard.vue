@@ -1,8 +1,10 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import WeeklySalesChart from '@/Components/WeeklySalesChart.vue';
-import { ref, onMounted, computed } from 'vue';
+import NotificationContainer from '@/Components/NotificationContainer.vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useNotifications } from '@/Composables/useNotifications';
 import {
   CurrencyDollarIcon,
   CubeIcon,
@@ -12,10 +14,20 @@ import {
   ClockIcon,
   ChartBarIcon,
   ArrowUpIcon,
-  ArrowDownIcon
+  ArrowDownIcon,
+  DocumentArrowDownIcon
 } from '@heroicons/vue/24/outline';
 
 const weekOffset = ref(0);
+
+// Refs para los contadores animados
+const animatedSalesAmount = ref(0);
+const animatedProductsCount = ref(0);
+const animatedCustomersCount = ref(0);
+const animatedCategoriesCount = ref(0);
+
+// Sistema de notificaciones
+const { showDashboardNotifications } = useNotifications();
 
 const previousWeek = () => {
     weekOffset.value++;
@@ -29,6 +41,32 @@ const nextWeek = () => {
 
 const currentWeek = () => {
     weekOffset.value = 0;
+};
+
+// Función para animar contadores
+const animateCounter = (targetValue, currentRef, duration = 2000, isPrice = false) => {
+  const startValue = 0;
+  const increment = targetValue / (duration / 16); // 60 FPS
+  let current = startValue;
+  
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= targetValue) {
+      current = targetValue;
+      clearInterval(timer);
+    }
+    currentRef.value = isPrice ? current : Math.floor(current);
+  }, 16);
+};
+
+// Función para extraer el valor numérico del precio
+const extractSalesValue = (salesAmount) => {
+  if (!salesAmount) return 0;
+  const match = salesAmount.match(/[\d,.]+/);
+  if (match) {
+    return parseFloat(match[0].replace(/,/g, ''));
+  }
+  return 0;
 };
 
 const props = defineProps({
@@ -112,6 +150,11 @@ const dashboardTitle = computed(() => {
   return props.userRole === 'admin' ? 'Dashboard - Administrador' : 'Dashboard - Empleado';
 });
 
+// Computed para formatear el monto de ventas animado
+const formattedAnimatedSales = computed(() => {
+  return `S/ ${animatedSalesAmount.value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+});
+
 const formatPrice = (price) => {
   if (price === null || price === undefined || isNaN(price)) return '0.00';
   return parseFloat(price).toFixed(2);
@@ -128,6 +171,23 @@ const formatStatus = (status) => {
 
 onMounted(() => {
   console.log('Dashboard mounted with props:', props);
+  
+  // Iniciar animaciones de contadores después de un pequeño delay para efecto dramático
+  setTimeout(() => {
+    const salesValue = extractSalesValue(safeTotals.value.sales.amount);
+    animateCounter(salesValue, animatedSalesAmount, 2500, true);
+    animateCounter(safeTotals.value.products.count, animatedProductsCount, 2000);
+    animateCounter(safeTotals.value.customers.count, animatedCustomersCount, 2200);
+    animateCounter(safeTotals.value.categories.count, animatedCategoriesCount, 1800);
+  }, 300);
+
+  // Mostrar notificaciones automáticas del dashboard
+  showDashboardNotifications({
+    totals: safeTotals.value,
+    alerts: safeAlerts.value,
+    topProducts: safeTopProducts.value,
+    userRole: props.userRole
+  });
 });
 </script>
 
@@ -136,13 +196,24 @@ onMounted(() => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex items-center justify-between">
+                            <div class="flex items-center justify-between">
                 <h2 class="font-bold text-2xl text-gray-900 leading-tight">
                     {{ dashboardTitle }}
                 </h2>
-                <div class="flex items-center space-x-2 text-sm text-gray-500">
-                    <ChartBarIcon class="h-5 w-5" />
-                    <span>Panel de Control</span>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <ChartBarIcon class="h-5 w-5" />
+                        <span>Panel de Control</span>
+                    </div>
+                    <!-- Botón de Reportes (solo para admin) -->
+                    <Link 
+                        v-if="userRole === 'admin'"
+                        :href="route('admin.reports.index')"
+                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                        <DocumentArrowDownIcon class="h-4 w-4 mr-2" />
+                        Exportar Reportes
+                    </Link>
                 </div>
             </div>
         </template>
@@ -163,70 +234,70 @@ onMounted(() => {
                 <!-- Tarjetas de Estadísticas Modernas -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <!-- Ventas Totales -->
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-blue-100 text-sm font-medium">Ventas Totales</p>
-                                <p class="text-2xl font-bold">{{ totals.sales.amount }}</p>
+                                <p class="text-3xl font-bold tracking-tight">{{ formattedAnimatedSales }}</p>
                                 <div class="flex items-center mt-2">
-                                    <ArrowUpIcon v-if="totals.sales.trend === 'up'" class="h-4 w-4 text-green-300 mr-1" />
-                                    <ArrowDownIcon v-else class="h-4 w-4 text-red-300 mr-1" />
-                                    <span class="text-sm" :class="totals.sales.trend === 'up' ? 'text-green-300' : 'text-red-300'">
-                                        {{ totals.sales.percentage }}% desde el último mes
+                                    <ArrowUpIcon v-if="safeTotals.sales.trend === 'up'" class="h-4 w-4 text-green-300 mr-1 animate-bounce" />
+                                    <ArrowDownIcon v-else class="h-4 w-4 text-red-300 mr-1 animate-bounce" />
+                                    <span class="text-sm" :class="safeTotals.sales.trend === 'up' ? 'text-green-300' : 'text-red-300'">
+                                        {{ safeTotals.sales.percentage }}% desde el último mes
                                     </span>
                                 </div>
                             </div>
                             <div class="p-3 bg-white bg-opacity-20 rounded-lg">
-                                <CurrencyDollarIcon class="h-8 w-8" />
+                                <CurrencyDollarIcon class="h-8 w-8 animate-pulse" />
                             </div>
                         </div>
                     </div>
 
                     <!-- Total Productos -->
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-green-100 text-sm font-medium">Total Productos</p>
-                                <p class="text-2xl font-bold">{{ totals.products.count }}</p>
-                                <p class="text-sm text-green-200 mt-2">{{ totals.products.new }} nuevos productos</p>
+                                <p class="text-3xl font-bold tracking-tight">{{ animatedProductsCount.toLocaleString() }}</p>
+                                <p class="text-sm text-green-200 mt-2">{{ safeTotals.products.new }} nuevos productos</p>
                             </div>
                             <div class="p-3 bg-white bg-opacity-20 rounded-lg">
-                                <CubeIcon class="h-8 w-8" />
+                                <CubeIcon class="h-8 w-8 animate-pulse" />
                             </div>
                         </div>
                     </div>
 
                     <!-- Total Clientes -->
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-purple-100 text-sm font-medium">Total Clientes</p>
-                                <p class="text-2xl font-bold">{{ totals.customers.count }}</p>
-                                <p class="text-sm text-purple-200 mt-2">{{ totals.customers.new }} nuevos clientes</p>
+                                <p class="text-3xl font-bold tracking-tight">{{ animatedCustomersCount.toLocaleString() }}</p>
+                                <p class="text-sm text-purple-200 mt-2">{{ safeTotals.customers.new }} nuevos clientes</p>
                             </div>
                             <div class="p-3 bg-white bg-opacity-20 rounded-lg">
-                                <UsersIcon class="h-8 w-8" />
+                                <UsersIcon class="h-8 w-8 animate-pulse" />
                             </div>
                         </div>
                     </div>
 
                     <!-- Categorías -->
-                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-200">
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-2xl">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-orange-100 text-sm font-medium">Categorías</p>
-                                <p class="text-2xl font-bold">{{ totals.categories.count }}</p>
-                                <p class="text-sm text-orange-200 mt-2">{{ totals.categories.new }} nuevas categorías</p>
+                                <p class="text-3xl font-bold tracking-tight">{{ animatedCategoriesCount.toLocaleString() }}</p>
+                                <p class="text-sm text-orange-200 mt-2">{{ safeTotals.categories.new }} nuevas categorías</p>
                             </div>
                             <div class="p-3 bg-white bg-opacity-20 rounded-lg">
-                                <TagIcon class="h-8 w-8" />
+                                <TagIcon class="h-8 w-8 animate-pulse" />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Alertas Modernas -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 alerts-section">
                     <!-- Productos con Bajo Stock -->
                     <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                         <div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-6 py-4 border-b border-gray-100">
@@ -469,4 +540,7 @@ onMounted(() => {
             </div>
         </div>
     </AuthenticatedLayout>
+    
+    <!-- Contenedor de Notificaciones -->
+    <NotificationContainer />
 </template>

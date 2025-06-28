@@ -21,6 +21,8 @@ return new class extends Migration
             $table->decimal('minimum_stock', 10, 2)->default(0);
             $table->string('image')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('has_expiration')->default(false);
+            $table->timestamp('expiration_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
