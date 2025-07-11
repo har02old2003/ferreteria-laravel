@@ -532,7 +532,6 @@ const showDetailsModal = ref(false)
 const isEditing = ref(false)
 const selectedClient = ref(null)
 
-
 const searchQuery = ref('')
 
 const form = useForm({
@@ -591,10 +590,16 @@ const handleSearch = () => {
 }
 
 const openCreateModal = () => {
-    isEditing.value = false
-    form.reset()
-    form.status = 'active'
-    showModal.value = true
+    isEditing.value = false;
+    form.reset();
+    form.first_name = '';
+    form.last_name = '';
+    form.dni = '';
+    form.phone = '';
+    form.email = '';
+    form.address = '';
+    form.status = 'active';
+    showModal.value = true;
 }
 
 const openEditModal = (client) => {
@@ -614,7 +619,6 @@ const closeModal = () => {
     showModal.value = false
     form.reset()
     form.clearErrors()
-    
 }
 
 const confirmDelete = (client) => {
