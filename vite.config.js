@@ -31,7 +31,7 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    vendor: ['vue', 'inertiajs/inertia-vue3'],
+                    vendor: ['vue', '@inertiajs/inertia-vue3'],
                 },
             },
         },
