@@ -23,4 +23,25 @@ export default defineConfig({
             ziggy: '/vendor/tightenco/ziggy/dist',
         },
     },
+    build: {
+        // Optimizaciones para producción
+        outDir: 'public/build',
+        assetsDir: '',
+        manifest: true,
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['vue', 'inertiajs/inertia-vue3'],
+                },
+            },
+        },
+        // Comprimir assets
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
+    },
 });
